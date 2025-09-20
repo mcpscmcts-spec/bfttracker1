@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Marine Corps BFT Elite Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --mc-green: #1f2d24;
+      --mc-green-darker: #18231c;
+      --mc-gold: #ffd700;
+      --mc-gold-deep: #b8973a;
+      --mc-black: #181818;
+      --mc-grey: #2c322a;
+      --mc-gradient: linear-gradient(120deg, var(--mc-green-darker) 0%, var(--mc-green) 60%, var(--mc-gold-deep) 100%);
+      --accent-star: #ffe066;
+      --accent-glow: 0 0 24px 4px var(--mc-gold);
+      --fail: #db4343;
+      --pass: #2ec774;
+      --merit: #f7c948;
+      --card-bg: rgba(32, 63, 43, 0.98);
+      --input-bg: rgba(32, 63, 43, 0.7);
+      --input-border: 1.5px solid #3b5c3a;
+      --shimmer-1: rgba(226,201,122,0.23);
+      --shimmer-2: rgba(226,201,122,0.44);
+      --shimmer-3: rgba(32,63,43,0.11);
+      --header-height: 68px;
+      --footer-height: 44px;
+      --shadow-smooth: 0 2px 18px 0 rgba(226,201,122,0.10);
+      --gold-glow: 0 0 16px 0 var(--mc-gold);
+      --transition-fast: 0.15s;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--mc-gradient);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      color: #fff;
+      letter-spacing: 0.01em;
+      scroll-behavior: smooth;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(circle at 60% 23%, var(--shimmer-2) 0%, transparent 72%),
+                  repeating-linear-gradient(0deg, var(--shimmer-3) 0px, var(--shimmer-3) 1px, transparent 1px, transparent 40px),
+                  repeating-linear-gradient(90deg, var(--shimmer-3) 0px, var(--shimmer-3) 1px, transparent 1px, transparent 40px);
+      animation: bgPulse 6s infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes bgPulse {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+    .shimmer {
+      background: linear-gradient(120deg, var(--shimmer-1) 20%, var(--shimmer-2) 45%, transparent 100%);
+      animation: shimmerAnim 2.8s infinite linear;
+      opacity: 0.17;
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes shimmerAnim {
+      0% { background-position: -340px 0; }
+      100% { background-position: 340px 0; }
+    }
+
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      height: var(--header-height);
+      background: rgba(32,63,43,0.97);
+      color: var(--mc-gold);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      z-index: 10;
+      box-shadow: var(--shadow-smooth);
+    }
+    .logo {
+      height: 46px;
+      width: 46px;
+      display: inline-block;
+      margin-right: 1.2rem;
+      filter: drop-shadow(0 0 8px var(--mc-gold));
+      animation: logoPulse 2.4s infinite alternate;
+      border-radius: 50%;
+      background: var(--mc-black);
+      box-shadow: var(--gold-glow);
+    }
+    @keyframes logoPulse {
+      0% { filter: drop-shadow(0 0 8px var(--mc-gold)); }
+      100% { filter: drop-shadow(0 0 24px var(--mc-gold)); }
+    }
+    .main-title {
+      font-size: 1.35rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      display: flex;
+      align-items: center;
+      position: relative;
+      gap: 0.47em;
+      text-shadow: 0 2px 14px var(--mc-gold-deep);
+      user-select: none;
+    }
+    .star-accent {
+      color: var(--accent-star);
+      font-size: 1.23em;
+      animation: starTwinkle 1.25s infinite alternate;
+      filter: drop-shadow(0 0 6px var(--mc-gold));
+      text-shadow: 0 0 8px var(--mc-gold);
+    }
+    @keyframes starTwinkle {
+      0% { opacity: 0.7; }
+      100% { opacity: 1; transform: scale(1.15); }
+    }
+    .header-glow {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle at 75% 60%, var(--mc-gold) 0%, transparent 85%);
+      opacity: 0.13;
+      z-index: -1;
+    }
+    .logoutBtn {
+      background: var(--mc-green);
+      color: var(--mc-gold);
+      font-size: 1em;
+      border: 2px solid var(--mc-gold-deep);
+      border-radius: 8px;
+      padding: 0.4em 1em;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-left: 1.2em;
+      transition: background var(--transition-fast), box-shadow var(--transition-fast);
+      box-shadow: var(--gold-glow);
+    }
+    .logoutBtn:hover {
+      background: var(--mc-gold-deep);
+      color: var(--mc-green);
+      box-shadow: 0 0 20px 1px var(--mc-gold);
+    }
+
+    main {
+      margin: 0 auto;
+      max-width: 490px;
+      padding: 1.5rem 1rem 4.5rem 1rem;
+      min-height: calc(100vh - var(--header-height) - var(--footer-height));
+      position: relative;
+      z-index: 1;
+    }
+    section {
+      margin-bottom: 2.5rem;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: var(--shadow-smooth);
+      padding: 1.5rem 1.2rem;
+      position: relative;
+      overflow: hidden;
+      border: 1.5px solid var(--mc-gold-deep);
+    }
+    section .section-title {
+      font-size: 1.13em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mc-gold);
+      margin-bottom: 0.7em;
+      display: flex;
+      align-items: center;
+      gap: 0.31em;
+      text-shadow: 0 2px 12px var(--mc-gold);
+      user-select: none;
+    }
+    .section-title .star-accent {
+      font-size: 1.07em;
+      margin-left: 0.2em;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7em;
+    }
+    label {
+      font-weight: 600;
+      color: var(--mc-gold);
+      font-size: 1em;
+      margin-bottom: 0.2em;
+      text-shadow: 0 0 8px var(--mc-gold-deep);
+    }
+    input, select, button, textarea {
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 1em;
+      border-radius: 8px;
+      border: var(--input-border);
+      padding: 0.7em 1em;
+      background: var(--input-bg);
+      color: #fff;
+      outline: none;
+      transition: border var(--transition-fast), box-shadow var(--transition-fast);
+      box-shadow: 0 1px 6px 0 var(--mc-gold-deep);
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--mc-gold);
+      box-shadow: var(--gold-glow);
+    }
+    button {
+      background: linear-gradient(90deg, var(--mc-gold-deep) 0%, var(--mc-gold) 100%);
+      color: #1a2212;
+      font-weight: 800;
+      text-transform: uppercase;
+      border: none;
+      box-shadow: var(--gold-glow);
+      cursor: pointer;
+      transition: box-shadow var(--transition-fast), background var(--transition-fast);
+      border-radius: 8px;
+    }
+    button:active {
+      box-shadow: 0 0 20px 3px var(--mc-gold);
+      background: var(--mc-gold-deep);
+      color: var(--mc-green);
+    }
+    .btn-secondary {
+      background: var(--mc-green);
+      color: var(--mc-gold);
+      border: 1.5px solid var(--mc-gold);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    /* Auth UI */
+    #auth-section {
+      display: none;
+    }
+    #auth-section.active {
+      display: block;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0.7em;
+      margin-bottom: 1em;
+      justify-content: center;
+    }
+    .auth-tab {
+      padding: 0.6em 1.3em;
+      border-radius: 8px;
+      font-weight: 700;
+      background: var(--mc-green-darker);
+      color: var(--mc-gold);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: background var(--transition-fast), border var(--transition-fast);
+      font-size: 1em;
+      box-shadow: var(--gold-glow);
+    }
+    .auth-tab.active {
+      background: var(--mc-gold-deep);
+      color: #203f2b;
+      border: 1.5px solid var(--mc-gold);
+      box-shadow: 0 0 20px 2px var(--mc-gold);
+    }
+    #auth-error {
+      color: var(--fail);
+      font-weight: 700;
+      margin-top: 0.5em;
+      text-align: center;
+      letter-spacing: 0.04em;
+      font-size: 1.05em;
+    }
+
+    /* Profile UI */
+    #profile-section {
+      display: none;
+    }
+    #profile-section.active {
+      display: block;
+    }
+    .profile-photo {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2.5px solid var(--mc-gold);
+      box-shadow: 0 0 18px 3px var(--mc-gold);
+      margin-bottom: 0.7em;
+      background: #1a2212;
+      display: block;
+      position: relative;
+    }
+    .photo-actions {
+      display: flex;
+      gap: 0.85em;
+      margin-bottom: 1.1em;
+      justify-content: center;
+    }
+    .photo-upload-btn, .photo-remove-btn {
+      font-size: 0.97em;
+      padding: 0.37em 1.1em;
+      border-radius: 7px;
+      box-shadow: 0 0 8px 0 var(--mc-gold-deep);
+    }
+
+    /* BFT Entry UI */
+    #bft-section {
+      display: none;
+    }
+    #bft-section.active {
+      display: block;
+    }
+    .input-group {
+      display: flex;
+      gap: 1em;
+      flex-wrap: wrap;
+    }
+    .form-note {
+      font-size: 0.97em;
+      color: #f7c948;
+      margin-top: 0.35em;
+      font-weight: 600;
+      text-shadow: 0 0 8px var(--mc-gold-deep);
+    }
+    .calc-result {
+      font-size: 1.08em;
+      color: var(--pass);
+      font-weight: 800;
+      margin-top: 0.35em;
+      text-shadow: 0 0 12px var(--pass);
+    }
+    .calc-result.fail {
+      color: var(--fail);
+      text-shadow: 0 0 14px var(--fail);
+    }
+    .calc-result.merit {
+      color: var(--merit);
+      text-shadow: 0 0 14px var(--merit);
+    }
+
+    /* Records Display */
+    #records-section {
+      display: none;
+    }
+    #records-section.active {
+      display: block;
+    }
+    .record-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.3em;
+    }
+    @media (min-width: 600px) {
+      .record-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .record-card {
+      background: var(--mc-green-darker);
+      border-radius: 12px;
+      border: 2px solid var(--mc-gold);
+      box-shadow: var(--shadow-smooth);
+      padding: 1.1em;
+      position: relative;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.36em;
+      transition: box-shadow var(--transition-fast);
+      overflow: hidden;
+    }
+    .record-card:hover {
+      box-shadow: 0 4px 32px 2px var(--mc-gold);
+      z-index: 2;
+    }
+    .record-status {
+      font-size: 0.97em;
+      font-weight: 800;
+      border-radius: 7px;
+      padding: 0.18em 0.67em;
+      color: #203f2b;
+      position: absolute;
+      top: 1em; right: 1em;
+      background: var(--pass);
+      box-shadow: 0 0 11px 2px var(--pass);
+      letter-spacing: 0.04em;
+    }
+    .record-status.fail {
+      background: var(--fail);
+      box-shadow: 0 0 11px 2px var(--fail);
+      color: #fff;
+    }
+    .record-status.merit {
+      background: var(--merit);
+      box-shadow: 0 0 11px 2px var(--merit);
+      color: #203f2b;
+    }
+    .record-badges {
+      display: flex;
+      gap: 0.38em;
+      margin-top: 0.25em;
+    }
+    .badge {
+      background: var(--mc-gold);
+      color: #203f2b;
+      font-weight: 700;
+      border-radius: 5px;
+      padding: 0.15em 0.6em;
+      font-size: 0.95em;
+      box-shadow: 0 0 6px 0 var(--mc-gold-deep);
+      letter-spacing: 0.03em;
+    }
+    .badge.merit {
+      background: var(--merit);
+      color: #203f2b;
+      box-shadow: 0 0 12px 0 var(--merit);
+    }
+    .badge.fail {
+      background: var(--fail);
+      color: #fff;
+      box-shadow: 0 0 12px 0 var(--fail);
+    }
+    .record-actions {
+      display: flex;
+      gap: 0.7em;
+      margin-top: 0.5em;
+      justify-content: flex-end;
+    }
+    .record-actions button {
+      font-size: 0.91em;
+      padding: 0.27em 1em;
+      border-radius: 7px;
+      font-weight: 700;
+      box-shadow: 0 0 6px 0 var(--mc-gold-deep);
+      letter-spacing: 0.02em;
+    }
+    .filter-row {
+      display: flex;
+      gap: 0.7em;
+      align-items: center;
+      margin-bottom: 1.4em;
+      flex-wrap: wrap;
+    }
+    .filter-row select {
+      flex: 1;
+      min-width: 100px;
+    }
+    .summary-row {
+      background: var(--mc-green);
+      color: var(--mc-gold);
+      font-weight: 800;
+      border-radius: 10px;
+      padding: 0.6em 1em;
+      margin-bottom: 1em;
+      font-size: 1.06em;
+      box-shadow: 0 0 8px 0 var(--mc-gold-deep);
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    /* Notifications */
+    #notify-bar {
+      position: fixed;
+      top: var(--header-height);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 180px;
+      max-width: 95vw;
+      padding: 1em 1.4em;
+      background: linear-gradient(90deg, var(--mc-gold-deep), var(--mc-gold));
+      color: #203f2b;
+      font-weight: 800;
+      border-radius: 14px;
+      box-shadow: 0 2px 16px 0 var(--mc-gold);
+      z-index: 99;
+      display: none;
+      text-align: center;
+      font-size: 1.06em;
+      animation: notifyPulse 1.2s;
+    }
+    @keyframes notifyPulse {
+      0% { opacity: 0; transform: scale(0.8) translateX(-50%);}
+      30% { opacity: 0.9; transform: scale(1.08) translateX(-50%);}
+      100% { opacity: 1; transform: scale(1) translateX(-50%);}
+    }
+    #loading-bar {
+      position: fixed;
+      top: calc(var(--header-height) + 50px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 160px;
+      max-width: 90vw;
+      padding: 0.8em 1.1em;
+      background: linear-gradient(90deg, var(--mc-green-darker), var(--mc-green));
+      color: var(--mc-gold);
+      font-weight: 700;
+      border-radius: 12px;
+      box-shadow: 0 2px 14px 0 var(--mc-gold);
+      z-index: 99;
+      display: none;
+      text-align: center;
+      font-size: 1.04em;
+      animation: loadingPulse 2s infinite alternate;
+    }
+    @keyframes loadingPulse {
+      0% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* Footer */
+    footer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: var(--footer-height);
+      background: rgba(32,63,43,0.97);
+      color: var(--mc-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1em;
+      z-index: 10;
+      box-shadow: 0 -2px 14px 0 rgba(226,201,122,0.08);
+      letter-spacing: 0.07em;
+      font-weight: 700;
+      text-shadow: 0 0 12px var(--mc-gold-deep);
+    }
+    footer .footer-light {
+      position: absolute;
+      left: 0; right: 0; top: 0; height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle at 40% 60%, var(--mc-gold) 0%, transparent 82%);
+      opacity: 0.09;
+      z-index: -1;
+    }
+
+    /* Misc */
+    .hidden { display: none !important; }
+    .center { text-align: center; }
+    .mt-1 { margin-top: 1em; }
+    .mb-1 { margin-bottom: 1em; }
+    @media (max-width: 520px) {
+      main { padding: 0.8rem 0.2rem 3.7rem 0.2rem; }
+      header, footer { padding: 0 0.7rem; }
+    }
+    ::selection {
+      background: var(--mc-gold);
+      color: var(--mc-green-darker);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Emblem_of_the_United_States_Marine_Corps.svg/88px-Emblem_of_the_United_States_Marine_Corps.svg.png" class="logo" alt="Marine Corps Logo" />
+    <div class="main-title">
+      <span>Marine Corps BFT Elite Tracker</span>
+      <span class="star-accent">&#9733;</span>
+      <span>2025</span>
+      <div class="header-glow"></div>
+    </div>
+    <button id="logoutBtn" class="logoutBtn hidden">LOGOUT</button>
+  </header>
+
+  <div class="shimmer"></div>
+
+  <main>
+    <!-- AUTH SECTION -->
+    <section id="auth-section" class="active">
+      <div class="section-title">
+        <span>User Authentication</span>
+        <span class="star-accent">&#9733;</span>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-signin">Sign In</button>
+        <button class="auth-tab" id="tab-signup">Sign Up</button>
+      </div>
+      <form id="signin-form">
+        <label for="signin-service-number">Service Number</label>
+        <input type="text" id="signin-service-number" maxlength="12" required autocomplete="username" placeholder="e.g. 12345678">
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" required autocomplete="current-password" placeholder="Password">
+        <button type="submit">Sign In</button>
+      </form>
+      <form id="signup-form" class="hidden">
+        <label for="signup-service-number">Service Number</label>
+        <input type="text" id="signup-service-number" maxlength="12" required autocomplete="username" placeholder="e.g. 12345678">
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" required autocomplete="new-password" placeholder="Create Password">
+        <label for="signup-rank">Rank</label>
+        <select id="signup-rank" required>
+          <option value="">Select Rank</option>
+          <option value="Private">Private</option>
+          <option value="Corporal">Corporal</option>
+          <option value="Sergeant">Sergeant</option>
+          <option value="Staff Sergeant">Staff Sergeant</option>
+          <option value="Gunnery Sergeant">Gunnery Sergeant</option>
+          <option value="Lieutenant">Lieutenant</option>
+          <option value="Captain">Captain</option>
+          <option value="Major">Major</option>
+        </select>
+        <label for="signup-name">Full Name</label>
+        <input type="text" id="signup-name" required maxlength="64" placeholder="Full Name">
+        <label for="signup-unit">Unit</label>
+        <input type="text" id="signup-unit" required maxlength="32" placeholder="Unit">
+        <button type="submit">Sign Up</button>
+      </form>
+      <div id="auth-error"></div>
+    </section>
+
+    <!-- PROFILE SECTION -->
+    <section id="profile-section">
+      <div class="section-title">
+        <span>Edit Profile</span>
+        <span class="star-accent">&#9733;</span>
+      </div>
+      <form id="profile-form">
+        <div class="center">
+          <img id="profile-photo" src="" alt="Profile Photo" class="profile-photo hidden">
+          <div class="photo-actions center">
+            <input type="file" id="profile-photo-upload" accept="image/*" style="display:none;">
+            <button type="button" id="photo-upload-btn" class="photo-upload-btn btn-secondary">Upload Photo</button>
+            <button type="button" id="photo-remove-btn" class="photo-remove-btn btn-secondary hidden">Remove Photo</button>
+          </div>
+        </div>
+        <label for="profile-service-number">Service Number</label>
+        <input type="text" id="profile-service-number" readonly>
+        <label for="profile-rank">Rank</label>
+        <select id="profile-rank">
+          <option value="Private">Private</option>
+          <option value="Corporal">Corporal</option>
+          <option value="Sergeant">Sergeant</option>
+          <option value="Staff Sergeant">Staff Sergeant</option>
+          <option value="Gunnery Sergeant">Gunnery Sergeant</option>
+          <option value="Lieutenant">Lieutenant</option>
+          <option value="Captain">Captain</option>
+          <option value="Major">Major</option>
+        </select>
+        <label for="profile-name">Full Name</label>
+        <input type="text" id="profile-name" maxlength="64">
+        <label for="profile-unit">Unit</label>
+        <input type="text" id="profile-unit" maxlength="32">
+        <button type="submit" class="mt-1">Save Profile</button>
+      </form>
+    </section>
+
+    <!-- BFT ENTRY SECTION -->
+    <section id="bft-section">
+      <div class="section-title">
+        <span>New BFT Test Entry</span>
+        <span class="star-accent">&#9733;</span>
+      </div>
+      <form id="bft-form">
+        <div class="input-group">
+          <div>
+            <label for="bft-date">Date</label>
+            <input type="date" id="bft-date" required>
+          </div>
+          <div>
+            <label for="bft-age">Age</label>
+            <input type="number" id="bft-age" min="14" max="60" required>
+          </div>
+        </div>
+        <label for="bft-pushups">Push-Ups</label>
+        <input type="number" id="bft-pushups" min="0" max="200" required>
+        <label for="bft-situps">Sit-Ups</label>
+        <input type="number" id="bft-situps" min="0" max="200" required>
+        <div class="input-group">
+          <div>
+            <label for="bft-run-min">Run (Minutes)</label>
+            <input type="number" id="bft-run-min" min="0" max="99" required>
+          </div>
+          <div>
+            <label for="bft-run-sec">Run (Seconds)</label>
+            <input type="number" id="bft-run-sec" min="0" max="59" required>
+          </div>
+        </div>
+        <div class="form-note">Minimums: Push-ups ≥ 30, Sit-ups ≥ 35, Run ≤ 14:00</div>
+        <div id="bft-calc-result" class="calc-result"></div>
+        <button type="submit" class="mt-1">Add Record</button>
+      </form>
+    </section>
+
+    <!-- RECORDS SECTION -->
+    <section id="records-section">
+      <div class="section-title">
+        <span>BFT Test Records</span>
+        <span class="star-accent">&#9733;</span>
+      </div>
+      <div class="filter-row">
+        <select id="year-filter">
+          <option value="">All Years</option>
+        </select>
+        <button id="exportBtn" class="btn-secondary">Export</button>
+        <button id="clearBtn" class="btn-secondary">Clear All</button>
+      </div>
+      <div id="summary-row" class="summary-row hidden"></div>
+      <div id="record-grid" class="record-grid"></div>
+    </section>
+  </main>
+
+  <div id="notify-bar"></div>
+  <div id="loading-bar"></div>
+
+  <footer>
+    <span>Marine Corps BFT Elite Tracker &copy; 2025</span>
+    <span class="footer-light"></span>
+    <span style="margin-left:1em;font-weight:400;font-size:0.95em;">Design by mcpscmcts-spec</span>
+  </footer>
+
+  <script>
+    // --- CONFIG ---
+    const SUPABASE_URL = 'https://axshskxwnjudlywhozhq.supabase.co';
+    const SUPABASE_KEY = 'yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4c2hza3h3bmp1ZGx5d2hvemhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzOTIzMDMsImV4cCI6MjA3Mzk2ODMwM30.tu3dNvFNGZeKgVK74LuQloeMtDVP3k1q3DRBrIncs3Q';
+    const PROFILE_BUCKET = 'profile-photos';
+    const FIXED_DOMAIN = '@mctrain.school';
+
+    // --- Supabase Client ---
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // --- UI Element Refs ---
+    function $(id) { return document.getElementById(id); }
+    const el = {
+      authSection: $('auth-section'), profileSection: $('profile-section'),
+      bftSection: $('bft-section'), recordsSection: $('records-section'),
+      notifyBar: $('notify-bar'), loadingBar: $('loading-bar'), logoutBtn: $('logoutBtn'),
+      tabSignin: $('tab-signin'), tabSignup: $('tab-signup'), signinForm: $('signin-form'),
+      signupForm: $('signup-form'), authError: $('auth-error'), signupRank: $('signup-rank'),
+      signupName: $('signup-name'), signupUnit: $('signup-unit'), signupServiceNumber: $('signup-service-number'),
+      signupPassword: $('signup-password'), signinServiceNumber: $('signin-service-number'),
+      signinPassword: $('signin-password'), profileForm: $('profile-form'),
+      profilePhoto: $('profile-photo'), profilePhotoUpload: $('profile-photo-upload'),
+      photoUploadBtn: $('photo-upload-btn'), photoRemoveBtn: $('photo-remove-btn'),
+      profileServiceNumber: $('profile-service-number'), profileRank: $('profile-rank'),
+      profileName: $('profile-name'), profileUnit: $('profile-unit'), bftForm: $('bft-form'),
+      bftDate: $('bft-date'), bftAge: $('bft-age'), bftPushups: $('bft-pushups'), bftSitups: $('bft-situps'),
+      bftRunMin: $('bft-run-min'), bftRunSec: $('bft-run-sec'), bftCalcResult: $('bft-calc-result'),
+      recordGrid: $('record-grid'), summaryRow: $('summary-row'), yearFilter: $('year-filter'),
+      exportBtn: $('exportBtn'), clearBtn: $('clearBtn')
+    };
+
+    function showSection(sectionName) {
+      ['authSection','profileSection','bftSection','recordsSection'].forEach(s => {
+        el[s].classList.remove('active');
+      });
+      el[sectionName].classList.add('active');
+    }
+
+    function notify(msg, timeout=2600) {
+      el.notifyBar.textContent = msg;
+      el.notifyBar.style.display = '';
+      setTimeout(() => { el.notifyBar.style.display = 'none'; }, timeout);
+    }
+    function loading(on, msg='Loading...') {
+      el.loadingBar.style.display = on ? '' : 'none';
+      el.loadingBar.textContent = on ? msg : '';
+    }
+
+    // --- Auth Tabs ---
+    el.tabSignin.addEventListener('click', () => {
+      el.tabSignin.classList.add('active');
+      el.tabSignup.classList.remove('active');
+      el.signinForm.classList.remove('hidden');
+      el.signupForm.classList.add('hidden');
+      el.authError.textContent = '';
+    });
+    el.tabSignup.addEventListener('click', () => {
+      el.tabSignin.classList.remove('active');
+      el.tabSignup.classList.add('active');
+      el.signinForm.classList.add('hidden');
+      el.signupForm.classList.remove('hidden');
+      el.authError.textContent = '';
+    });
+
+    // --- Authentication ---
+    async function signIn(serviceNumber, password) {
+      loading(true, "Signing in...");
+      const email = serviceNumber + FIXED_DOMAIN;
+      let { error, data } = await supabase.auth.signInWithPassword({ email, password });
+      loading(false);
+      if (error) {
+        el.authError.textContent = "Sign in failed: " + (error.message || "Check service number/password.");
+        return false;
+      }
+      return data?.user || true;
+    }
+    async function signUp(serviceNumber, password, rank, name, unit) {
+      loading(true, "Signing up...");
+      const email = serviceNumber + FIXED_DOMAIN;
+      let { error, data } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        loading(false);
+        el.authError.textContent = "Sign up failed: " + (error.message || "Service number may already be registered.");
+        return false;
+      }
+      // Insert profile record
+      let { error: pError } = await supabase
+        .from('profiles')
+        .upsert([{ service_number: serviceNumber, rank, name, unit }], { onConflict: 'service_number' });
+      loading(false);
+      if (pError) {
+        el.authError.textContent = "Profile save error: " + pError.message;
+        return false;
+      }
+      return data.user;
+    }
+
+    el.signinForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      let sn = el.signinServiceNumber.value.trim();
+      let pw = el.signinPassword.value;
+      if (!sn || !pw) return;
+      let user = await signIn(sn, pw);
+      if (user) {
+        await afterAuth();
+      }
+    });
+    el.signupForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      let sn = el.signupServiceNumber.value.trim();
+      let pw = el.signupPassword.value;
+      let rank = el.signupRank.value;
+      let name = el.signupName.value.trim();
+      let unit = el.signupUnit.value.trim();
+      if (!sn || !pw || !rank || !name || !unit) return;
+      let user = await signUp(sn, pw, rank, name, unit);
+      if (user) {
+        notify("Sign up successful. Please sign in.");
+        el.tabSignin.click();
+        el.signinServiceNumber.value = sn;
+      }
+    });
+
+    // --- Persistent Login ---
+    async function afterAuth() {
+      el.logoutBtn.classList.remove('hidden');
+      let user = await getCurrentUser();
+      if (!user) { logout(); return; }
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      await loadProfile(sn);
+      await loadRecords(sn);
+      showSection('profileSection');
+    }
+    async function getCurrentUser() {
+      let { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+    async function logout() {
+      await supabase.auth.signOut();
+      el.logoutBtn.classList.add('hidden');
+      showSection('authSection');
+      notify("Logged out.");
+    }
+    el.logoutBtn.onclick = logout;
+
+    // --- Profile Management ---
+    async function loadProfile(sn) {
+      loading(true, "Loading profile...");
+      let { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('service_number', sn)
+        .single();
+      loading(false);
+      if (error || !data) {
+        notify("Profile not found. Please complete your profile.");
+        el.profileServiceNumber.value = sn;
+        el.profileRank.value = '';
+        el.profileName.value = '';
+        el.profileUnit.value = '';
+      } else {
+        el.profileServiceNumber.value = data.service_number;
+        el.profileRank.value = data.rank;
+        el.profileName.value = data.name;
+        el.profileUnit.value = data.unit;
+        await loadProfilePhoto(sn);
+      }
+    }
+    el.profileForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      let sn = el.profileServiceNumber.value.trim();
+      let rank = el.profileRank.value;
+      let name = el.profileName.value.trim();
+      let unit = el.profileUnit.value.trim();
+      loading(true, "Saving profile...");
+      let { error } = await supabase
+        .from('profiles')
+        .upsert([{ service_number: sn, rank, name, unit }], { onConflict: 'service_number' });
+      loading(false);
+      if (!error) {
+        notify("Profile saved.");
+        showSection('bftSection');
+      } else {
+        notify("Error saving profile: " + error.message);
+      }
+    });
+
+    // --- Profile Photo Upload/Remove ---
+    async function loadProfilePhoto(sn) {
+      let { data, error } = await supabase.storage.from(PROFILE_BUCKET).download(sn + ".jpg");
+      if (data) {
+        let url = URL.createObjectURL(data);
+        el.profilePhoto.src = url;
+        el.profilePhoto.classList.remove('hidden');
+        el.photoRemoveBtn.classList.remove('hidden');
+      } else {
+        el.profilePhoto.src = "";
+        el.profilePhoto.classList.add('hidden');
+        el.photoRemoveBtn.classList.add('hidden');
+      }
+    }
+    el.photoUploadBtn.onclick = () => el.profilePhotoUpload.click();
+    el.profilePhotoUpload.onchange = async (e) => {
+      let sn = el.profileServiceNumber.value.trim();
+      let file = e.target.files[0];
+      if (!file) return;
+      loading(true, "Uploading photo...");
+      let { error } = await supabase.storage.from(PROFILE_BUCKET)
+        .upload(sn + ".jpg", file, { upsert: true });
+      loading(false);
+      if (!error) {
+        notify("Photo updated.");
+        await loadProfilePhoto(sn);
+      } else {
+        notify("Photo upload error: " + error.message);
+      }
+    };
+    el.photoRemoveBtn.onclick = async () => {
+      let sn = el.profileServiceNumber.value.trim();
+      loading(true, "Removing photo...");
+      let { error } = await supabase.storage.from(PROFILE_BUCKET)
+        .remove([sn + ".jpg"]);
+      loading(false);
+      if (!error) {
+        notify("Photo removed.");
+        await loadProfilePhoto(sn);
+      } else {
+        notify("Photo remove error: " + error.message);
+      }
+    };
+
+    // --- BFT Form: Live Calculation/Validation ---
+    function calcBFTResult(pushUps, sitUps, runMin, runSec) {
+      let pass = pushUps >= 30 && sitUps >= 35 && (runMin * 60 + runSec) <= 14 * 60;
+      let merit = pushUps >= 50 && sitUps >= 60 && (runMin * 60 + runSec) <= 12 * 60;
+      if (merit) return { status: "Merit", class: "merit" };
+      if (pass) return { status: "Pass", class: "pass" };
+      return { status: "Fail", class: "fail" };
+    }
+    function updateBFTCalc() {
+      let pu = parseInt(el.bftPushups.value) || 0;
+      let su = parseInt(el.bftSitups.value) || 0;
+      let rm = parseInt(el.bftRunMin.value) || 0;
+      let rs = parseInt(el.bftRunSec.value) || 0;
+      let result = calcBFTResult(pu, su, rm, rs);
+      el.bftCalcResult.textContent = result.status;
+      el.bftCalcResult.className = "calc-result " + result.class;
+    }
+    [el.bftPushups, el.bftSitups, el.bftRunMin, el.bftRunSec].forEach(inp => {
+      inp.addEventListener('input', updateBFTCalc);
+    });
+
+    // --- BFT Record Entry ---
+    let editingRecordId = null;
+    el.bftForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      let user = await getCurrentUser();
+      if (!user) return logout();
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      let date = el.bftDate.value;
+      let age = parseInt(el.bftAge.value);
+      let pushUps = parseInt(el.bftPushups.value);
+      let sitUps = parseInt(el.bftSitups.value);
+      let runMin = parseInt(el.bftRunMin.value);
+      let runSec = parseInt(el.bftRunSec.value);
+      if (!date || !age || !pushUps || !sitUps || runMin === null || runSec === null) return;
+
+      if (editingRecordId) {
+        loading(true, "Updating record...");
+        let { error } = await supabase.from('records').update({
+          date, age, push_ups: pushUps, sit_ups: sitUps, run_minutes: runMin, run_seconds: runSec
+        }).eq('id', editingRecordId);
+        loading(false);
+        if (!error) {
+          notify("Record updated.");
+          editingRecordId = null;
+          await loadRecords(sn);
+          showSection('recordsSection');
+          el.bftForm.reset();
+          el.bftCalcResult.textContent = '';
+        } else {
+          notify("Update error: " + error.message);
+        }
+      } else {
+        loading(true, "Saving record...");
+        let { error } = await supabase
+          .from('records')
+          .insert([{ service_number: sn, date, age, push_ups: pushUps, sit_ups: sitUps, run_minutes: runMin, run_seconds: runSec }]);
+        loading(false);
+        if (!error) {
+          notify("Record added.");
+          await loadRecords(sn);
+          showSection('recordsSection');
+          el.bftForm.reset();
+          el.bftCalcResult.textContent = '';
+        } else {
+          notify("Error saving record: " + error.message);
+        }
+      }
+    });
+
+    // --- Records Grid UI ---
+    async function loadRecords(sn) {
+      loading(true, "Loading records...");
+      let { data, error } = await supabase
+        .from('records')
+        .select('*')
+        .eq('service_number', sn)
+        .order('date', { ascending: false });
+      loading(false);
+      if (error) {
+        el.recordGrid.innerHTML = "<div class='center'>Error loading records: " + error.message + "</div>";
+        return;
+      }
+      renderRecords(data || []);
+    }
+    function renderRecords(records) {
+      // Year filter
+      let years = [...new Set(records.map(r => r.date ? r.date.slice(0,4) : ''))].filter(Boolean).sort().reverse();
+      el.yearFilter.innerHTML = "<option value=''>All Years</option>" + years.map(y => `<option value="${y}">${y}</option>`).join('');
+      // Filter
+      let year = el.yearFilter.value;
+      let filteredRecords = year ? records.filter(r => r.date.slice(0,4) === year) : records;
+      // Summary
+      let stats = { pass:0, merit:0, fail:0 };
+      filteredRecords.forEach(r => {
+        let res = calcBFTResult(r.push_ups, r.sit_ups, r.run_minutes, r.run_seconds);
+        stats[res.class]++;
+      });
+      el.summaryRow.innerHTML = 
+        `Pass: <span class='badge'>${stats.pass}</span> | Merit: <span class='badge merit'>${stats.merit}</span> | Fail: <span class='badge fail'>${stats.fail}</span>`;
+      el.summaryRow.classList.toggle('hidden', filteredRecords.length === 0);
+      // Cards
+      el.recordGrid.innerHTML = filteredRecords.length ? filteredRecords.map(rec => {
+        let res = calcBFTResult(rec.push_ups, rec.sit_ups, rec.run_minutes, rec.run_seconds);
+        let statusClass = `record-status ${res.class}`;
+        let badge = res.class === 'merit' ? "<span class='badge merit'>Merit</span>" :
+                    res.class === 'pass' ? "<span class='badge'>Pass</span>" :
+                    "<span class='badge fail'>Fail</span>";
+        return `
+          <div class="record-card">
+            <div class="${statusClass}">${res.status}</div>
+            <div><strong>Date:</strong> ${rec.date}</div>
+            <div><strong>Age:</strong> ${rec.age}</div>
+            <div><strong>Push-ups:</strong> ${rec.push_ups}</div>
+            <div><strong>Sit-ups:</strong> ${rec.sit_ups}</div>
+            <div><strong>Run:</strong> ${String(rec.run_minutes).padStart(2,'0')}:${String(rec.run_seconds).padStart(2,'0')}</div>
+            <div class="record-badges">${badge}</div>
+            <div class="record-actions">
+              <button class="btn-secondary" onclick="editRecord('${rec.id}')">Edit</button>
+              <button class="btn-secondary" onclick="deleteRecord('${rec.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('') : "<div class='center'>No records yet.</div>";
+    }
+    el.yearFilter.onchange = async () => {
+      let user = await getCurrentUser();
+      if (user) await loadRecords(user.email.replace(FIXED_DOMAIN, ''));
+    };
+
+    // --- Record CRUD: Edit/Delete ---
+    window.editRecord = async function(id) {
+      let user = await getCurrentUser();
+      if (!user) return logout();
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      loading(true, "Loading record...");
+      let { data, error } = await supabase.from('records').select('*').eq('id', id).single();
+      loading(false);
+      if (!data) return notify("Record not found.");
+      showSection('bftSection');
+      el.bftDate.value = data.date;
+      el.bftAge.value = data.age;
+      el.bftPushups.value = data.push_ups;
+      el.bftSitups.value = data.sit_ups;
+      el.bftRunMin.value = data.run_minutes;
+      el.bftRunSec.value = data.run_seconds;
+      updateBFTCalc();
+      editingRecordId = id;
+    };
+    window.deleteRecord = async function(id) {
+      if (!confirm("Delete this record?")) return;
+      let user = await getCurrentUser();
+      if (!user) return logout();
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      loading(true, "Deleting record...");
+      let { error } = await supabase.from('records').delete().eq('id', id);
+      loading(false);
+      if (!error) {
+        notify("Record deleted.");
+        await loadRecords(sn);
+      } else {
+        notify("Delete error: " + error.message);
+      }
+    };
+
+    // --- Export/Clear Data ---
+    el.exportBtn.onclick = async () => {
+      let user = await getCurrentUser();
+      if (!user) return logout();
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      loading(true, "Exporting...");
+      let { data, error } = await supabase
+        .from('records')
+        .select('*')
+        .eq('service_number', sn);
+      loading(false);
+      if (data) {
+        let csv = "Date,Age,Push-ups,Sit-ups,Run-min,Run-sec,Status\n" + data.map(r => {
+          let res = calcBFTResult(r.push_ups, r.sit_ups, r.run_minutes, r.run_seconds);
+          return `${r.date},${r.age},${r.push_ups},${r.sit_ups},${r.run_minutes},${r.run_seconds},${res.status}`;
+        }).join('\n');
+        let blob = new Blob([csv], {type:'text/csv'});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = "BFT_records.csv";
+        a.click();
+        notify("Exported CSV.");
+      } else {
+        notify("Export error: " + error?.message);
+      }
+    };
+    el.clearBtn.onclick = async () => {
+      if (!confirm("Clear ALL your records?")) return;
+      let user = await getCurrentUser();
+      if (!user) return logout();
+      let sn = user.email.replace(FIXED_DOMAIN, '');
+      loading(true, "Clearing...");
+      let { error } = await supabase
+        .from('records')
+        .delete()
+        .eq('service_number', sn);
+      loading(false);
+      if (!error) {
+        notify("All records cleared.");
+        await loadRecords(sn);
+      } else {
+        notify("Clear error: " + error.message);
+      }
+    };
+
+    // --- Initial Load: Session Check ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      let { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await afterAuth();
+      } else {
+        showSection('authSection');
+      }
+    });
+
+    // --- Section Navigation ---
+    el.profileForm.addEventListener('submit', e => { e.preventDefault(); showSection('bftSection'); });
+    el.bftForm.addEventListener('submit', e => { e.preventDefault(); showSection('recordsSection'); });
+
+    // --- Error Handling (Global) ---
+    window.addEventListener('error', function(e) {
+      notify("Error: " + e.message, 4000);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      notify("Error: " + (e.reason?.message || e.reason), 4000);
+    });
+  </script>
+</body>
+</html>
